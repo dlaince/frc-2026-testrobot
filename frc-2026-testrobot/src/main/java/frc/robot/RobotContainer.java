@@ -6,10 +6,10 @@ import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 
 import frc.robot.subsystems.*;
 import frc.robot.commands.*;
+import frc.robot.commands.climber.*;
 import frc.robot.commands.elevator.*;
 import frc.robot.commands.intake.*;
 import frc.robot.commands.outtake.*;
-import frc.robot.commands.climber.*;
 import frc.robot.autonomous.AutoRoutine;
 
 public class RobotContainer {
@@ -17,7 +17,8 @@ public class RobotContainer {
     // Controllers
     private final XboxController driverController =
             new XboxController(Constants.OperatorConstants.DRIVER_CONTROLLER_PORT);
-    private final XboxController operatorController =
+    
+    private final XboxController operatorController =  //elevator, shooter, intake vb. mekanizmaların kontrolü
             new XboxController(Constants.OperatorConstants.OPERATOR_CONTROLLER_PORT);
 
     // Subsystems
@@ -26,7 +27,8 @@ public class RobotContainer {
     private final VisionSubsystem visionSubsystem = new VisionSubsystem(driveSubsystem);
     private final Elevator elevatorSubsystem = new Elevator();
     private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
-    private final ShooterSubsystem outtakeSubsystem = new ShooterSubsystem();
+    private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
+    private final FeederSubsystem feederSubsystem = new FeederSubsystem();
 
     public RobotContainer() {
         configureDefaultCommands();
@@ -34,7 +36,7 @@ public class RobotContainer {
     }
 
     // ---------------- DEFAULT COMMANDS ----------------
-    private void configureDefaultCommands() {
+    private void configureDefaultCommands() {  //her subsystemin bir default commandi olabilir. O subsystem boşta kaldığında default command çalışır.
         driveSubsystem.setDefaultCommand(
                 new DriveCommand(driveSubsystem, driverController)
         );
@@ -46,14 +48,22 @@ public class RobotContainer {
         climberSubsystem.setDefaultCommand(
                 new HoldClimberCommand(climberSubsystem)
         );
+
+        // Optional: Shooter otomatik hedefleme
+        shooterSubsystem.setDefaultCommand(
+                new TargetWithShooterCommand(shooterSubsystem, visionSubsystem)
+        );
     }
 
     // ---------------- BUTTON BINDINGS ----------------
-    private void configureButtonBindings() {
+    private void configureButtonBindings() {  //controller tuşları commandlere bağlanılıyor
 
         /* ---------- DRIVER ---------- */
+
+        // Vision ile otomatik hizalama
         new JoystickButton(driverController, Constants.ButtonConstants.AUTO_ALIGN)
-                .whileTrue(new AutoAlignCommand(driveSubsystem, visionSubsystem));
+                .whileTrue(new AlignRobotToShootCommand(driveSubsystem, visionSubsystem,
+                        () -> driverController.getLeftX(), () -> driverController.getLeftY()));
 
         // CLIMBER – driver kontrol ediyor
         new JoystickButton(driverController, Constants.ButtonConstants.CLIMB_UP)
@@ -92,10 +102,15 @@ public class RobotContainer {
         new JoystickButton(operatorController, Constants.ButtonConstants.ELEVATOR_ZERO)
                 .onTrue(new ZeroElevatorCommand(elevatorSubsystem));
 
-        // Outtake / Shooter
+        // Shooter / Outtake
         new JoystickButton(operatorController, Constants.ButtonConstants.SHOOT)
-                .whileTrue(new OuttakeShootCommand(outtakeSubsystem))
-                .onFalse(new OuttakeStopCommand(outtakeSubsystem));
+                .whileTrue(new ShootWhenReadyCommand(feederSubsystem, shooterSubsystem, visionSubsystem))
+                .onFalse(() -> feederSubsystem.setFeederSpeed(0.0));
+
+        // Fender Shoot (sabit açı ve hız)
+        new JoystickButton(operatorController, Constants.ButtonConstants.FENDER_SHOOT)
+                .whileTrue(new FenderShootCommand(feederSubsystem, shooterSubsystem))
+                .onFalse(() -> feederSubsystem.setFeederSpeed(0.0));
     }
 
     // ---------------- AUTONOMOUS ----------------
@@ -104,7 +119,8 @@ public class RobotContainer {
                 driveSubsystem,
                 visionSubsystem,
                 elevatorSubsystem,
-                outtakeSubsystem
+                shooterSubsystem,
+                feederSubsystem
         );
     }
 }
