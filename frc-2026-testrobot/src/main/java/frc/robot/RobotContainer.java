@@ -14,14 +14,12 @@ import frc.robot.autonomous.AutoRoutine;
 
 public class RobotContainer {
 
-    // Controllers
     private final XboxController driverController =
             new XboxController(Constants.OperatorConstants.DRIVER_CONTROLLER_PORT);
     
-    private final XboxController operatorController =  //elevator, shooter, intake vb. mekanizmaların kontrolü
+    private final XboxController operatorController = 
             new XboxController(Constants.OperatorConstants.OPERATOR_CONTROLLER_PORT);
 
-    // Subsystems
     private final ClimberSubsystem climberSubsystem = new ClimberSubsystem();
     private final DrivetrainSubsystem driveSubsystem = new DrivetrainSubsystem();
     private final VisionSubsystem visionSubsystem = new VisionSubsystem(driveSubsystem);
@@ -35,8 +33,7 @@ public class RobotContainer {
         configureButtonBindings();
     }
 
-    // ---------------- DEFAULT COMMANDS ----------------
-    private void configureDefaultCommands() {  //her subsystemin bir default commandi olabilir. O subsystem boşta kaldığında default command çalışır.
+    private void configureDefaultCommands() {  
         driveSubsystem.setDefaultCommand(
                 new DriveCommand(driveSubsystem, driverController)
         );
@@ -49,23 +46,20 @@ public class RobotContainer {
                 new HoldClimberCommand(climberSubsystem)
         );
 
-        // Optional: Shooter otomatik hedefleme
         shooterSubsystem.setDefaultCommand(
                 new TargetWithShooterCommand(shooterSubsystem, visionSubsystem)
         );
     }
 
-    // ---------------- BUTTON BINDINGS ----------------
-    private void configureButtonBindings() {  //controller tuşları commandlere bağlanılıyor
 
-        /* ---------- DRIVER ---------- */
+    private void configureButtonBindings() {  
 
-        // Vision ile otomatik hizalama
+    
         new JoystickButton(driverController, Constants.ButtonConstants.AUTO_ALIGN)
                 .whileTrue(new AlignRobotToShootCommand(driveSubsystem, visionSubsystem,
                         () -> driverController.getLeftX(), () -> driverController.getLeftY()));
 
-        // CLIMBER – driver kontrol ediyor
+     
         new JoystickButton(driverController, Constants.ButtonConstants.CLIMB_UP)
                 .whileTrue(new ClimbUpCommand(climberSubsystem))
                 .onFalse(new ClimbStopCommand(climberSubsystem));
@@ -73,14 +67,10 @@ public class RobotContainer {
         new JoystickButton(driverController, Constants.ButtonConstants.CLIMB_DOWN)
                 .whileTrue(new ClimbDownCommand(climberSubsystem))
                 .onFalse(new ClimbStopCommand(climberSubsystem));
-
-        /* ---------- OPERATOR ---------- */
-
-        // Climber zero
+      
         new JoystickButton(operatorController, Constants.ButtonConstants.CLIMBER_ZERO)
                 .onTrue(new ZeroClimberCommand(climberSubsystem));
 
-        // Intake
         new JoystickButton(operatorController, Constants.ButtonConstants.INTAKE_IN)
                 .whileTrue(new IntakeInCommand(intakeSubsystem))
                 .onFalse(new IntakeStopCommand(intakeSubsystem));
@@ -89,7 +79,6 @@ public class RobotContainer {
                 .whileTrue(new IntakeOutCommand(intakeSubsystem))
                 .onFalse(new IntakeStopCommand(intakeSubsystem));
 
-        // Elevator levels
         new JoystickButton(operatorController, Constants.ButtonConstants.ELEVATOR_L1)
                 .onTrue(new SetElevatorLevelCommand(elevatorSubsystem, 1));
 
@@ -102,18 +91,15 @@ public class RobotContainer {
         new JoystickButton(operatorController, Constants.ButtonConstants.ELEVATOR_ZERO)
                 .onTrue(new ZeroElevatorCommand(elevatorSubsystem));
 
-        // Shooter / Outtake
         new JoystickButton(operatorController, Constants.ButtonConstants.SHOOT)
                 .whileTrue(new ShootWhenReadyCommand(feederSubsystem, shooterSubsystem, visionSubsystem))
                 .onFalse(() -> feederSubsystem.setFeederSpeed(0.0));
 
-        // Fender Shoot (sabit açı ve hız)
         new JoystickButton(operatorController, Constants.ButtonConstants.FENDER_SHOOT)
                 .whileTrue(new FenderShootCommand(feederSubsystem, shooterSubsystem))
                 .onFalse(() -> feederSubsystem.setFeederSpeed(0.0));
     }
 
-    // ---------------- AUTONOMOUS ----------------
     public Command getAutonomousCommand() {
         return new AutoRoutine(
                 driveSubsystem,
