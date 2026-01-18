@@ -6,11 +6,6 @@ import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 
 import frc.robot.subsystems.*;
 import frc.robot.commands.*;
-import frc.robot.commands.elevator.*;
-import frc.robot.commands.intake.*;
-import frc.robot.commands.outtake.*;
-import frc.robot.commands.climber.*;
-import frc.robot.autonomous.AutoRoutine;
 
 public class RobotContainer {
 
@@ -22,12 +17,14 @@ public class RobotContainer {
             new XboxController(Constants.OperatorConstants.OPERATOR_CONTROLLER_PORT);
 
     // Subsystems
-    private final ClimberSubsystem climberSubsystem = new ClimberSubsystem();
     private final DriveSubsystem driveSubsystem = new DriveSubsystem();
     private final VisionSubsystem visionSubsystem = new VisionSubsystem();
     private final ElevatorSubsystem elevatorSubsystem = new ElevatorSubsystem();
-    private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
     private final OuttakeSubsystem outtakeSubsystem = new OuttakeSubsystem();
+    private final ClimberSubsystem climberSubsystem = new ClimberSubsystem();
+    private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
+    private final FeederSubsystem feederSubsystem = new FeederSubsystem();
+    private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
 
     public RobotContainer() {
         configureDefaultCommands();
@@ -36,7 +33,6 @@ public class RobotContainer {
 
     // ---------------- DEFAULT COMMANDS ----------------
     private void configureDefaultCommands() {
-
         driveSubsystem.setDefaultCommand(
                 new DriveCommand(driveSubsystem, driverController)
         );
@@ -55,10 +51,16 @@ public class RobotContainer {
 
         /* ---------- DRIVER ---------- */
 
+        // Auto align
         new JoystickButton(driverController, Constants.ButtonConstants.AUTO_ALIGN)
-                .whileTrue(new AutoAlignCommand(driveSubsystem, visionSubsystem));
+                .whileTrue(new AlignRobotToShootCommand(
+                        driveSubsystem,
+                        visionSubsystem,
+                        () -> driverController.getLeftX(),
+                        () -> driverController.getLeftY()
+                ));
 
-        // CLIMBER – driver kontrol ediyor
+        // Climber – driver
         new JoystickButton(driverController, Constants.ButtonConstants.CLIMB_UP)
                 .whileTrue(new ClimbUpCommand(climberSubsystem))
                 .onFalse(new ClimbStopCommand(climberSubsystem));
@@ -95,14 +97,21 @@ public class RobotContainer {
         new JoystickButton(operatorController, Constants.ButtonConstants.ELEVATOR_ZERO)
                 .onTrue(new ZeroElevatorCommand(elevatorSubsystem));
 
-        // Outtake
+        // Outtake commands
         new JoystickButton(operatorController, Constants.ButtonConstants.SHOOT)
-                .whileTrue(new OuttakeShootCommand(outtakeSubsystem))
+                .whileTrue(new FenderShootCommand(feederSubsystem, shooterSubsystem))
                 .onFalse(new OuttakeStopCommand(outtakeSubsystem));
+
+        new JoystickButton(operatorController, Constants.ButtonConstants.SHOOT_WHEN_READY)
+                .whileTrue(new ShootWhenReadyCommand(feederSubsystem, shooterSubsystem, visionSubsystem));
+
+        new JoystickButton(operatorController, Constants.ButtonConstants.TARGET_SHOOTER)
+                .whileTrue(new TargetWithShooterCommand(shooterSubsystem, visionSubsystem));
     }
 
     // ---------------- AUTONOMOUS ----------------
     public Command getAutonomousCommand() {
+
         return new AutoRoutine(
                 driveSubsystem,
                 visionSubsystem,
@@ -111,3 +120,4 @@ public class RobotContainer {
         );
     }
 }
+
