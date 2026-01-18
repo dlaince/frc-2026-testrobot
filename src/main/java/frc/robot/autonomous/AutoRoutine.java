@@ -23,36 +23,25 @@ public class AutoRoutine extends SequentialCommandGroup {
 
         addCommands(
 
-            //  1.5 saniye ileri sür
+            // 1) 1.5 saniye ileri sür
             new RunCommand(
-                    () -> driveSubsystem.drive(
-                            new ChassisSpeeds(1.0, 0.0, 0.0)
-                    ),
+                    () -> driveSubsystem.drive(new ChassisSpeeds(1.0, 0.0, 0.0)),
                     driveSubsystem
             ).withTimeout(1.5),
 
-            //  Dur
+            // 2) Dur
             new RunCommand(
-                    () -> driveSubsystem.drive(
-                            new ChassisSpeeds(0.0, 0.0, 0.0)
-                    ),
+                    () -> driveSubsystem.drive(new ChassisSpeeds(0.0, 0.0, 0.0)),
                     driveSubsystem
             ).withTimeout(0.1),
 
-            //  Limelight mesafesine göre shooter ayarla
-            new TargetWithShooterCommand(
-                    shooterSubsystem,
-                    visionSubsystem
-            ).withTimeout(1.0),
+            // 3) Limelight mesafesine göre shooter ayarla
+            new TargetWithShooterCommand(shooterSubsystem, visionSubsystem).withTimeout(1.0),
 
-            // Hazır olunca otomatik ateş et
-            new ShootWhenReadyCommand(
-                    feederSubsystem,
-                    shooterSubsystem,
-                    visionSubsystem
-            ).withTimeout(2.5),
+            // 4) Hazır olunca otomatik ateş et
+            new ShootWhenReadyCommand(feederSubsystem, shooterSubsystem, visionSubsystem).withTimeout(2.5),
 
-            //  Güvenlik beklemesi
+            // 5) Güvenlik beklemesi
             new WaitCommand(0.1)
         );
     }
